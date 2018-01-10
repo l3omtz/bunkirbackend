@@ -16,6 +16,7 @@
     "graphql-tools": "^2.16.0",
     "mongoose": "^5.0.0-rc1",
     "request": "^2.83.0",
-    "request-promise": "^4.2.2"
+    "request-promise": "^4.2.2",
+    "rxpress": "^0.3.0"
   }
 }

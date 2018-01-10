@@ -1,20 +1,19 @@
-//  Entry point of the server
 const express = require('express');
 const bodyParser = require('body-parser');
 const Mongoose = require('mongoose');
 
-const PORT = 8000;
+const PORT = 8080;
 const app = express();
 const { apolloExpress, graphiqlExpress } = require('apollo-server');
 const { makeExecutableSchema } = require('graphql-tools');
 
 Mongoose.Promise = global.Promise;
 Mongoose.connect('mongodb://localhost/apollo', (err) => {
-    if(err){
-        return err;
-    }
-    return true;
-})
+  if (err) {
+    return err;
+  }
+  return true;
+});
 
 const seed = require('./seed');
 
@@ -25,22 +24,21 @@ const Resolvers = require('./resolvers');
 const Connectors = require('./connectors');
 
 const executableSchema = makeExecutableSchema({
-    typeDefs: Schema,
-    resolvers: Resolvers
+  typeDefs: Schema,
+  resolvers: Resolvers,
 });
 
 app.use('/graphql', bodyParser.json(), apolloExpress({
-    schema: executableSchema,
-    context: {
-        Connectors: Connectors
-    }
+  schema: executableSchema,
+  context: {
+    constructor: Connectors,
+  },
 }));
 
-app.user('/graphql', graphiqlExpress({
-    endpointURL: '/graphql'
+app.use('/graphiql', graphiqlExpress({
+  endpointURL: '/graphql',
 }));
 
 app.listen(PORT, () => console.log(
-    `GraphQL Server is now running on http://localhost:${PORT}/graphql`
+  `GraphQL Server is now running on http://localhost:${PORT}/graphql`
 ));
-
