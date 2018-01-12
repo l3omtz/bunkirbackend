@@ -29,9 +29,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2D02E47A1E0B4A5D006451C7"
-               BuildableName = "apolloClient-tvOS.app"
-               BlueprintName = "apolloClient-tvOS"
-               ReferencedContainer = "container:apolloClient.xcodeproj">
+               BuildableName = "apolloclient-tvOS.app"
+               BlueprintName = "apolloclient-tvOS"
+               ReferencedContainer = "container:apolloclient.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -43,9 +43,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2D02E48F1E0B4A5D006451C7"
-               BuildableName = "apolloClient-tvOSTests.xctest"
-               BlueprintName = "apolloClient-tvOSTests"
-               ReferencedContainer = "container:apolloClient.xcodeproj">
+               BuildableName = "apolloclient-tvOSTests.xctest"
+               BlueprintName = "apolloclient-tvOSTests"
+               ReferencedContainer = "container:apolloclient.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -61,9 +61,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2D02E48F1E0B4A5D006451C7"
-               BuildableName = "apolloClient-tvOSTests.xctest"
-               BlueprintName = "apolloClient-tvOSTests"
-               ReferencedContainer = "container:apolloClient.xcodeproj">
+               BuildableName = "apolloclient-tvOSTests.xctest"
+               BlueprintName = "apolloclient-tvOSTests"
+               ReferencedContainer = "container:apolloclient.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -71,9 +71,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2D02E47A1E0B4A5D006451C7"
-            BuildableName = "apolloClient-tvOS.app"
-            BlueprintName = "apolloClient-tvOS"
-            ReferencedContainer = "container:apolloClient.xcodeproj">
+            BuildableName = "apolloclient-tvOS.app"
+            BlueprintName = "apolloclient-tvOS"
+            ReferencedContainer = "container:apolloclient.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -94,9 +94,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2D02E47A1E0B4A5D006451C7"
-            BuildableName = "apolloClient-tvOS.app"
-            BlueprintName = "apolloClient-tvOS"
-            ReferencedContainer = "container:apolloClient.xcodeproj">
+            BuildableName = "apolloclient-tvOS.app"
+            BlueprintName = "apolloclient-tvOS"
+            ReferencedContainer = "container:apolloclient.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <AdditionalOptions>
@@ -113,9 +113,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2D02E47A1E0B4A5D006451C7"
-            BuildableName = "apolloClient-tvOS.app"
-            BlueprintName = "apolloClient-tvOS"
-            ReferencedContainer = "container:apolloClient.xcodeproj">
+            BuildableName = "apolloclient-tvOS.app"
+            BlueprintName = "apolloclient-tvOS"
+            ReferencedContainer = "container:apolloclient.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
