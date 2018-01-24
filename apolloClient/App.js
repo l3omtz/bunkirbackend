@@ -3,7 +3,8 @@ import {
   Platform,
   StyleSheet,
   Text,
-  View
+  View, 
+  TextInput
 } from 'react-native';
 
 import { graphql } from 'react-apollo';
@@ -11,25 +12,49 @@ import gql from 'graphql-tag';
 
 
 class App extends Component {
-  render() {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.welcome}>
-          Welcome to React Native!
-        </Text>
-        <Text style={styles.instructions}>
-          To get started, edit App.js
-        </Text>
-      </View>
-    );
+  constructor() {
+    super()
+    this.state = {
+      name: '',
+    }
+    this.updateName = this.updateName.bind(this)
+  }
+  updateName(name) {
+    this.setState({
+      name
+    })
+  }
 
-    const query = gql`query PresidentQuery($name: String!) { 
-      president(name: $name) {
+  render() {
+    const query = gql`query PresidentQuery($party: String!) { 
+      president(party: $party) {
         name
         term
         party
       }
     }`
+
+    const President = ({ data }) => (
+      <View style={{paddingLeft: 20, paddingTop: 20}}>
+        <Text>Name: {data.president && data.president.name}</Text>
+        <Text>Party: {data.president && data.president.party.length}</Text>
+        <Text>Term: {data.president && data.president.term}</Text>
+      </View>
+    )
+    
+    const ViewWithData = graphql(query, {
+      options: { variables: { party: this.state.name } }
+    })(President)
+
+    return (
+      <View style={styles.container}>
+        <Text style={{textAlign: 'center'}}>Find President Info</Text>
+        <TextInput
+          onChangeText={this.updateName}
+          style={styles.input} />
+        <ViewWithData />
+      </View>
+    );
   }
 }
 
@@ -37,19 +62,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
   },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
-  },
+  input: {
+    backgroundColor: '#dddddd',
+    height: 50,
+    margin: 20,
+    marginBottom: 0,
+    paddingLeft: 10
+  }
 });
 
 export default App
