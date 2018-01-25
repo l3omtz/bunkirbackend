@@ -10,6 +10,7 @@ const sessionSchema = new Schema({
 });
 
 const strainsSchema = new Schema({
+    // _id: { type: String},
     ailments : { type: String},
     cbd : { type: String},
     details : { type: String},
@@ -24,5 +25,5 @@ const strainsSchema = new Schema({
     type : { type: String},
 })
 
-export const Strain = mongoose.model('strains', strainsSchema);
-export default Strain;
+export const StrainCollection = mongoose.model('strains', strainsSchema);
+export default StrainCollection;
