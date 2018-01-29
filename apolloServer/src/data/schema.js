@@ -5,11 +5,14 @@ import {
 	GraphQLString,
 	GraphQLInt,
 	GraphQLObjectType,
+	GraphQLEnumType,
+	GraphQLInterfaceType
 } from 'graphql';
 
-import StrainCollection from '../models/session';
+import StrainCollection from '../models/strains';
+import UserCollection from '../models/user';
 
-export const StrainType = new GraphQLObjectType({
+const StrainType = new GraphQLObjectType({
 	name: 'Strain',
 	fields: () => ({
 		_id: { type: GraphQLString },
@@ -18,13 +21,25 @@ export const StrainType = new GraphQLObjectType({
 		details: { type: GraphQLString },
         imgUrl: { type: GraphQLString },
         loc: { type: GraphQLString },
-        location: { type: GraphQLString },
+        location: { type: new GraphQLList(GraphQLString)},
         name: { type: GraphQLString },
         ratio: { type: GraphQLString },
         thc: { type: GraphQLString },
         type: { type: GraphQLString },
 	})
 });
+
+const UserType = new GraphQLObjectType({
+	name: 'User',
+	fields: () => ({
+		_id: { type: GraphQLString },
+		dob: { type: GraphQLString },
+		email: { type: GraphQLString },
+		imgUrl: { type: GraphQLString },
+		name: { type: GraphQLString },
+		phone: { type: GraphQLString }
+	})
+})
 
 const mutation = new GraphQLObjectType({
 	name: 'Mutation',
@@ -66,21 +81,22 @@ const mutation = new GraphQLObjectType({
 				thc: { type: GraphQLString },
 				type: { type: GraphQLString },
 			},
-			resolve: async(root, args) => await StrainCollection.findByIdAndUpdate(args.id, args, { new: true })
-			// resolve(root, args) {
-			// 	return StrainCollection.findById(args.id).then(
-			// 		(data) => {
-			// 			console.log(data);
-			// 			data = args
-			// 			data.save().then(
-			// 				(com) => {
-			// 					console.log('saved', com);
-			// 				}
-			// 			)
-			// 		}
-			// 	)
-			// }
-			
+			resolve: async(root, args) => await StrainCollection.findByIdAndUpdate(args.id, args, { new: true })			
+		},
+		createUser: {
+			type: UserType,
+			args: {
+				name: { type: new GraphQLNonNull(GraphQLString) },
+				email: { type: new GraphQLNonNull(GraphQLString) },
+				phone: { type: new GraphQLNonNull(GraphQLString) },
+			},
+			resolve(parentValue, args) {
+				return UserCollection.create({
+					name: args.name,
+					email: args.email,
+					phone: args.phone
+				}).then(res => res);
+			}
 		}
 	}
 });
@@ -104,6 +120,23 @@ const RootQuery = new GraphQLObjectType({
 			resolve: (parentValue, args) => {
 				return StrainCollection.find({});
 			}
+		},
+		user: {
+			type: UserType,
+			args: {
+				id: { type: GraphQLString }
+			},
+			resolve:  ( root, args, context, info) => {
+				return UserCollection.findOne({ '_id': args.id }, (strain, err) => {
+					console.log(err, args.id);
+				});
+			}
+		},
+		users: {
+			type: new GraphQLList(UserType),
+			resolve: (parentValue, args) => {
+				return UserCollectiont.find({});
+			}
 		}
 	}
 });
@@ -111,7 +144,6 @@ const RootQuery = new GraphQLObjectType({
 const schema =  new GraphQLSchema({
 	query: RootQuery,
 	mutation: mutation
-
 });
 
 export default schema;
