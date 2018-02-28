@@ -12,7 +12,8 @@ const userSchema = new Schema({
     phone: { type: String },
     posts: [{ type: PostSchema }],
     password: { type: String },
-    userName: { type: String }
+    userName: { type: String },
+    jwt: {type: String },
 })
 
 export const UserCollection = mongoose.model('users', userSchema);

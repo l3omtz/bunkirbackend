@@ -14,10 +14,18 @@ import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
+import config from './config';
+import pubsub from './subscriptions';
+
 import StrainCollection from '../models/strains';
 import UserCollection from '../models/user';
 import PostCollection from '../models/post';
 
+const POST_ADDED = "postAdded";
+
+// ***
+// Types
+// ***
 const StrainType = new GraphQLObjectType({
 	name: 'Strain',
 	fields: () => ({
@@ -50,6 +58,7 @@ const UserType = new GraphQLObjectType({
 		},
 		password: { type: GraphQLString },
 		userName: { type: GraphQLString },
+		jwt: { type: GraphQLString },
 	})
 });
 
@@ -57,7 +66,9 @@ const SignInType = new GraphQLObjectType({
 	name: 'SignIn',
 	fields: () => ({
 		password: { type: GraphQLString },
-		userName: { type: GraphQLString }
+		userName: { type: GraphQLString },
+		_id: { type: GraphQLString },
+		jwt: { type: GraphQLString }
 	})
 });
 
@@ -67,6 +78,13 @@ const PostType = new GraphQLObjectType({
 		_id: { type: GraphQLString },
 		text: { type: GraphQLString },
 		user: { type: GraphQLString },
+	})
+})
+
+const ErrorType = new GraphQLObjectType({
+	name: 'Error',
+	fields: () => ({
+		message: { type: GraphQLString }
 	})
 })
 
@@ -99,7 +117,7 @@ const mutation = new GraphQLObjectType({
 				thc: { type: GraphQLString },
 				type: { type: GraphQLString },
 			},
-			resolve: async(root, args) => await StrainCollection.findByIdAndUpdate(args.id, args, { new: true })			
+			resolve: async(global, args) => await StrainCollection.findByIdAndUpdate(args.id, args, { new: true })			
 		},
 		deleteStrain: {
 			type: StrainType,
@@ -111,10 +129,35 @@ const mutation = new GraphQLObjectType({
 		// **
 		// * USER MUTATIONS
 		// **
+		signIn :{ // <-- Only query that is pertected... FOR NOW.
+			type: SignInType,
+			args: {
+				userName: { type: GraphQLString },
+				password: { type: GraphQLString }
+			},
+			resolve: async ( global, args, context, secret) => {
+				try {
+					let user = await UserCollection.findOne({ 'userName': args.userName });
+					let auth = await bcrypt.compare(args.password, user.password);
+					if (auth){
+						user.jwt = jwt.sign({_id: user._id}, config.secret);
+						await jwt.verify(user.jwt, config.secret);
+						return user;
+						
+					} else {
+						console.log("INVALID CREDS :(");
+						return 'Wrong username or password';
+					}
+				}
+				catch(err) {
+					console.log(err);
+				}
+			}
+		},
 		createUser: {
 			type: UserType,
 			args: {
-				name: { type: new GraphQLNonNull(GraphQLString) },
+				dob: { type: new GraphQLNonNull(GraphQLString) },
 				email: { type: new GraphQLNonNull(GraphQLString) },
 				phone: { type: new GraphQLNonNull(GraphQLString) },
 				password: { type: new GraphQLNonNull(GraphQLString) },
@@ -126,6 +169,7 @@ const mutation = new GraphQLObjectType({
 					let hash = await bcrypt.hash(args.password, salt);
 					args.password = hash;
 					let newUser =  await UserCollection.create(args)
+					newUser.jwt = jwt.sign({_id: newUser._id}, config.secret);
 					return newUser;
 				}
 				catch(err) {
@@ -144,7 +188,7 @@ const mutation = new GraphQLObjectType({
 				name: { type: GraphQLString },
 				phone: { type: GraphQLString }
 			},
-			resolve: async(root, args) => await UserCollection.findByIdAndUpdate(args.id, args, { new: true })			
+			resolve: async(global, args) => await UserCollection.findByIdAndUpdate(args.id, args, { new: true })			
 		},
 		deleteUser: {
 			type: UserType,
@@ -162,15 +206,21 @@ const mutation = new GraphQLObjectType({
 				userId: { type: new GraphQLNonNull(GraphQLString) },
 				text: { type: new GraphQLNonNull(GraphQLString) },
 			},
-			resolve: async (root, args) => {
+			resolve: async (global, args) => {
 				try {
 					let post = await PostCollection.create({user: args.userId, text: args.text})
 					// Add to users post array 
-					await UserCollection.findByIdAndUpdate(args.userId, { $push: { posts: post }}, { new: true })	
+					await UserCollection.findByIdAndUpdate(args.userId, { $push: { posts: post }}, { new: true })
+					pubsub.publish(POST_ADDED, {postAdded : post });
 					return post
 				}
 				catch(err) {
 					console.log(err)
+				}
+			},
+			subscription: {
+				postAdded: {
+					subscribe: () => pubsub.asyncIterator(POST_ADDED)
 				}
 			}
 		},
@@ -195,7 +245,7 @@ const RootQuery = new GraphQLObjectType({
 			args: {
 				id: { type: GraphQLString }
 			},
-			resolve:  async ( root, args, context, info) => await StrainCollection.findOne({ '_id': args.id })
+			resolve:  async ( global, args, context, info) => await StrainCollection.findOne({ '_id': args.id })
 		},
 		strains: {
 			type: new GraphQLList(StrainType),
@@ -204,36 +254,12 @@ const RootQuery = new GraphQLObjectType({
 		// **
 		// * USER QUERY
 		// **
-		signIn :{
-			type: SignInType,
-			args: {
-				userName: { type: GraphQLString },
-				password: { type: GraphQLString }
-			},
-			resolve: async ( root, args) => {
-				try {
-					let user = await UserCollection.findOne({ 'userName': args.userName });
-					let auth = await bcrypt.compare(args.password, user.password);
-					if (auth){
-						console.log("SIGNED IN! :D");
-						return user;
-					}else {
-						console.log("INVALID CREDS :(");
-						return null;
-					}
-				}
-				catch(err) {
-					console.log(err);
-				}
-			}
-		},
 		user: {
 			type: UserType,
 			args: {
-				id: { type: GraphQLString },
-				password: { type: GraphQLString }
+				id: { type: GraphQLString }
 			},
-			resolve:  async ( root, args, context, info ) => {
+			resolve:  async ( global, args, context, info ) => {
 				try {
 					let user = await UserCollection.findOne({ '_id': args.id });
 					return user;
@@ -255,7 +281,7 @@ const RootQuery = new GraphQLObjectType({
 			args: {
 				id: { type: GraphQLString }
 			},
-			resolve: async ( root, args, context, info ) => await PostCollection.findOne({ '_id': args.id })
+			resolve: async ( global, args, context, info ) => await PostCollection.findOne({ '_id': args.id })
 		},
 		posts: {
 			type: new GraphQLList(PostType),
@@ -265,9 +291,20 @@ const RootQuery = new GraphQLObjectType({
 	}
 });
 
+const Subscription = new GraphQLObjectType({
+	name: 'Subscription',
+	fields: {
+		postAdded: {
+			type: PostType,
+			subscribe: () => pubsub.asyncIterator(POST_ADDED)
+		}
+	},
+});
+
 const schema =  new GraphQLSchema({
 	query: RootQuery,
-	mutation: mutation
+	mutation: mutation,
+	subscription: Subscription
 });
 
 export default schema;
