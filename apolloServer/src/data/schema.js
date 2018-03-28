@@ -14,14 +14,17 @@ import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
+import _ from 'lodash';
 import config from './config';
 import pubsub from './subscriptions';
 
 import StrainCollection from '../models/strains';
 import UserCollection from '../models/user';
 import PostCollection from '../models/post';
+import DispensarieCollection from '../models/dispensarie';
 
 const POST_ADDED = "postAdded";
+const COMMENT_ADDED = 'commentAdded';
 
 // ***
 // Types
@@ -43,13 +46,26 @@ const StrainType = new GraphQLObjectType({
 	})
 });
 
+const DispensarieType = new GraphQLObjectType({
+	name: 'Dispensaire',
+	fields: () => ({
+		_id: { type: GraphQLString },
+		Image: { type: GraphQLString },
+		lat: { type: GraphQLString },
+		lng: { type: GraphQLString },
+		name: { type: GraphQLString },
+		phone: { type: GraphQLString },
+		url: { type: GraphQLString }
+	})
+});
+
 const UserType = new GraphQLObjectType({
 	name: 'User',
 	fields: () => ({
 		_id: { type: GraphQLString },
 		dob: { type: GraphQLString },
 		email: { type: GraphQLString },
-		imgUrl: { type: GraphQLString },
+		userImage: { type: GraphQLString },
 		name: { type: GraphQLString },
 		phone: { type: GraphQLString },
 		posts: { 
@@ -78,6 +94,22 @@ const PostType = new GraphQLObjectType({
 		_id: { type: GraphQLString },
 		text: { type: GraphQLString },
 		user: { type: GraphQLString },
+		image: { type: GraphQLString },
+		timeStamp: { type: GraphQLString },
+		comments: {
+			type: new GraphQLList(CommentType)
+		}
+	})
+})
+
+const CommentType = new GraphQLObjectType({
+	name: 'Comment',
+	fields: () => ({
+		_id: { type: GraphQLString },
+		text: { type: GraphQLString },
+		userId: { type: GraphQLString },
+		postId: { type : GraphQLString },
+		timeStamp: { type: GraphQLString }
 	})
 })
 
@@ -162,6 +194,7 @@ const mutation = new GraphQLObjectType({
 				phone: { type: new GraphQLNonNull(GraphQLString) },
 				password: { type: new GraphQLNonNull(GraphQLString) },
 				userName: { type: new GraphQLNonNull(GraphQLString) },
+				userImage: { type: GraphQLString }
 			},
 			resolve: async (parentValue, args) => {
 				try {
@@ -184,7 +217,7 @@ const mutation = new GraphQLObjectType({
 				id: { type: new GraphQLNonNull(GraphQLString) },
 				dob: { type: GraphQLString },
 				email: { type: GraphQLString },
-				imgUrl: { type: GraphQLString },
+				userImage: { type: GraphQLString },
 				name: { type: GraphQLString },
 				phone: { type: GraphQLString }
 			},
@@ -205,10 +238,12 @@ const mutation = new GraphQLObjectType({
 			args: {
 				userId: { type: new GraphQLNonNull(GraphQLString) },
 				text: { type: new GraphQLNonNull(GraphQLString) },
+				image: { type: GraphQLString },
+				timeStamp: { type: GraphQLString }
 			},
 			resolve: async (global, args) => {
 				try {
-					let post = await PostCollection.create({user: args.userId, text: args.text})
+					let post = await PostCollection.create({user: args.userId, text: args.text, image: args.image, timeStamp: args.timeStamp})
 					// Add to users post array 
 					await UserCollection.findByIdAndUpdate(args.userId, { $push: { posts: post }}, { new: true })
 					pubsub.publish(POST_ADDED, {postAdded : post });
@@ -230,7 +265,35 @@ const mutation = new GraphQLObjectType({
 				id: { type: new GraphQLNonNull(GraphQLString) }
 			},
 			resolve: async (parentValue, args) => await PostCollection.findByIdAndRemove(args.id)
+		},
+		// **
+		// * COMMENT MUTATIONS
+		// **
+		createComment: {
+			type: CommentType,
+			args: {
+				userId: { type: new GraphQLNonNull(GraphQLString) },
+				text: { type: new GraphQLNonNull(GraphQLString) },
+				timeStamp: { type: GraphQLString },
+				postId: { type: GraphQLString }
+			},
+			resolve: async (global, args) => {
+				try {
+					let post = await PostCollection.findByIdAndUpdate(args.postId, { $push: {comments:  args}}, { new: true});
+					pubsub.publish(COMMENT_ADDED, {commentAdded : args });
+					return _.last(post.comments); 
+				}
+				catch(err) {
+					console.log('post comment eror: ', err);
+				}
+			},
+			subscription: {
+				commentAdded: {
+					subscribe: () => pubsub.asyncIterator(COMMENT_ADDED)
+				}
+			}
 		}
+
 	}
 });
 
@@ -250,6 +313,20 @@ const RootQuery = new GraphQLObjectType({
 		strains: {
 			type: new GraphQLList(StrainType),
 			resolve: async (parentValue, args) => await StrainCollection.find({})
+		},
+		// **
+		// * DISPENSAIRES QUERY
+		// **
+		dispensarie: {
+			type: DispensarieType,
+			args: {
+				id: { type: GraphQLString }
+			},
+			resolve:  async ( global, args, context, info) => await DispensarieCollection.findOne({ '_id': args.id })
+		},
+		dispensaries: {
+			type: new GraphQLList(DispensarieType),
+			resolve: async (parentValue, args) => await DispensarieCollection.find({})
 		},
 		// **
 		// * USER QUERY
@@ -287,7 +364,13 @@ const RootQuery = new GraphQLObjectType({
 			type: new GraphQLList(PostType),
 			resolve: async (parentValue, args) => await PostCollection.find({})
 		},
-
+		postsByUser: {
+			type: new GraphQLList(PostType),
+			args: {
+				id: { type: GraphQLString }
+			},
+			resolve: async (parentValue, args) => await PostCollection.find({ 'user': args.id })
+		}
 	}
 });
 

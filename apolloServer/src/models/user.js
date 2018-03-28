@@ -7,7 +7,7 @@ const Schema = mongoose.Schema;
 const userSchema = new Schema({
     dob: { type: String },
     email: { type: String },
-    imgUrl: { type: String },
+    userImage: { type: String },
     name: { type: String },
     phone: { type: String },
     posts: [{ type: PostSchema }],
