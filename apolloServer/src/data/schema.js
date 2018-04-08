@@ -21,7 +21,9 @@ import pubsub from './subscriptions';
 import StrainCollection from '../models/strains';
 import UserCollection from '../models/user';
 import PostCollection from '../models/post';
+import SotdCollection from '../models/satingotds';
 import DispensarieCollection from '../models/dispensarie';
+import DealsCollection from '../models/deals';
 
 const POST_ADDED = "postAdded";
 const COMMENT_ADDED = 'commentAdded';
@@ -56,6 +58,16 @@ const DispensarieType = new GraphQLObjectType({
 		name: { type: GraphQLString },
 		phone: { type: GraphQLString },
 		url: { type: GraphQLString }
+	})
+});
+
+const DealType = new GraphQLObjectType({
+	name: 'Deal',
+	fields: () => ({
+		_id: { type: GraphQLString },
+		image: { type: GraphQLString },
+		text: { type: GraphQLString },
+		company: { type: GraphQLString },
 	})
 });
 
@@ -314,6 +326,18 @@ const RootQuery = new GraphQLObjectType({
 			type: new GraphQLList(StrainType),
 			resolve: async (parentValue, args) => await StrainCollection.find({})
 		},
+		satingotds: {
+			type: new GraphQLList(StrainType),
+			resolve: async (parentValue, args) => {
+				try {
+					let a = await SotdCollection.find({})
+					return a 
+				}
+				catch(err) {
+					console.log(err);
+				}
+			}
+		},
 		// **
 		// * DISPENSAIRES QUERY
 		// **
@@ -327,6 +351,20 @@ const RootQuery = new GraphQLObjectType({
 		dispensaries: {
 			type: new GraphQLList(DispensarieType),
 			resolve: async (parentValue, args) => await DispensarieCollection.find({})
+		},
+		// **
+		// * DEAL QUERY
+		// **
+		deal: {
+			type: DealType,
+			args: {
+				id: { type: GraphQLString }
+			},
+			resolve:  async ( global, args, context, info) => await DealsCollection.findOne({ '_id': args.id })
+		},
+		deals: {
+			type: new GraphQLList(DealType),
+			resolve: async (parentValue, args) => await DealsCollection.find({})
 		},
 		// **
 		// * USER QUERY

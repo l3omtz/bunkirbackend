@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
-const strainsSchema = new Schema({
+const SotdSchema = new Schema({
     ailments : { type: String},
     cbd : { type: String},
     details : { type: String},
@@ -16,7 +16,6 @@ const strainsSchema = new Schema({
     type : { type: String},
 })
 
-export const StrainCollection = mongoose.model('strains', strainsSchema);
-// module.exports = mongoose.model('strains', strainsSchema);
-export default StrainCollection;
-
+export const SotdCollection = mongoose.model('satingotds', SotdSchema);
+module.exports = mongoose.model('satingotds', SotdSchema);
+export default SotdCollection
